@@ -103,6 +103,31 @@ body {
     font-size: 1.2rem;
 }
 
+.optional {
+    font-weight: 400;
+    font-size: 0.9rem;
+    color: #718096;
+    font-style: italic;
+}
+
+.help-text {
+    font-size: 0.85rem;
+    color: #718096;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 5px;
+}
+
+.help-text a {
+    color: #667eea;
+    text-decoration: none;
+}
+
+.help-text a:hover {
+    text-decoration: underline;
+}
+
 .input-field {
     padding: 15px 20px;
     border: 2px solid #e2e8f0;
