@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Veronica's Wish List</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1 class="title">
+                <i class="fas fa-magic sparkle"></i>
+                Veronica's Wish List
+                <i class="fas fa-magic sparkle"></i>
+            </h1>
+            <p class="subtitle">Tell me about yourself and I'll create the perfect wishlist for you!</p>
+        </header>
+
+        <div class="form-container">
+            <form id="wishlistForm" class="wishlist-form">
+                <div class="input-group">
+                    <label for="age" class="input-label">
+                        <i class="fas fa-birthday-cake"></i>
+                        What's your age?
+                    </label>
+                    <input type="number" id="age" name="age" min="1" max="120" required class="input-field" placeholder="Enter your age">
+                </div>
+
+                <div class="input-group">
+                    <label for="interest" class="input-label">
+                        <i class="fas fa-heart"></i>
+                        What are you interested in?
+                    </label>
+                    <textarea id="interest" name="interest" required class="input-field textarea" placeholder="Tell me about your hobbies, interests, or things you love... (e.g., reading fantasy books, playing guitar, cooking, traveling, gaming, art, etc.)"></textarea>
+                </div>
+
+                <button type="submit" class="submit-btn" id="generateBtn">
+                    <i class="fas fa-wand-magic-sparkles"></i>
+                    <span>Generate My Wishlist</span>
+                </button>
+            </form>
+        </div>
+
+        <div id="loadingContainer" class="loading-container hidden">
+            <div class="loading-spinner"></div>
+            <p class="loading-text">Creating your perfect wishlist...</p>
+        </div>
+
+        <div id="wishlistContainer" class="wishlist-container hidden">
+            <h2 class="wishlist-title">
+                <i class="fas fa-gift"></i>
+                Your Personalized Wishlist
+            </h2>
+            <div id="wishlistItems" class="wishlist-items"></div>
+            <button id="regenerateBtn" class="regenerate-btn">
+                <i class="fas fa-refresh"></i>
+                Generate New List
+            </button>
+        </div>
+
+        <div id="errorContainer" class="error-container hidden">
+            <div class="error-message">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p id="errorText"></p>
+                <button id="retryBtn" class="retry-btn">Try Again</button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>Made with <i class="fas fa-heart"></i> for Veronica</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
