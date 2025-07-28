@@ -22,6 +22,19 @@
         <div class="form-container">
             <form id="wishlistForm" class="wishlist-form">
                 <div class="input-group">
+                    <label for="apiKey" class="input-label">
+                        <i class="fas fa-key"></i>
+                        GitHub Models API Key
+                        <span class="optional">(required for AI generation)</span>
+                    </label>
+                    <input type="password" id="apiKey" name="apiKey" required class="input-field" placeholder="Enter your GitHub Models API key">
+                    <small class="help-text">
+                        <i class="fas fa-info-circle"></i>
+                        Get your free API key at <a href="https://github.com/settings/tokens" target="_blank">GitHub Settings → Developer settings → Personal access tokens</a>
+                    </small>
+                </div>
+
+                <div class="input-group">
                     <label for="age" class="input-label">
                         <i class="fas fa-birthday-cake"></i>
                         What's your age?
@@ -46,13 +59,13 @@
 
         <div id="loadingContainer" class="loading-container hidden">
             <div class="loading-spinner"></div>
-            <p class="loading-text">Creating your perfect wishlist...</p>
+            <p class="loading-text">AI is creating your perfect wishlist...</p>
         </div>
 
         <div id="wishlistContainer" class="wishlist-container hidden">
             <h2 class="wishlist-title">
                 <i class="fas fa-gift"></i>
-                Your Personalized Wishlist
+                Your AI-Generated Wishlist
             </h2>
             <div id="wishlistItems" class="wishlist-items"></div>
             <button id="regenerateBtn" class="regenerate-btn">
@@ -71,7 +84,7 @@
     </div>
 
     <footer class="footer">
-        <p>Made with <i class="fas fa-heart"></i> for Veronica</p>
+        <p>Made with <i class="fas fa-heart"></i> for Veronica • Powered by GitHub Models GPT-4 Mini</p>
     </footer>
 
     <script src="script.js"></script>
