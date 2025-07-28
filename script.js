@@ -9,6 +9,10 @@ class WishlistGenerator {
         this.retryBtn = document.getElementById('retryBtn');
         this.errorText = document.getElementById('errorText');
         
+        // GitHub Models API configuration
+        this.apiEndpoint = 'https://models.inference.ai.azure.com/chat/completions';
+        this.modelName = 'gpt-4o-mini';
+        
         this.init();
     }
 
@@ -21,170 +25,223 @@ class WishlistGenerator {
     async handleSubmit(e) {
         e.preventDefault();
         
+        const apiKey = document.getElementById('apiKey').value;
         const age = document.getElementById('age').value;
         const interest = document.getElementById('interest').value;
+        
+        if (!apiKey || !apiKey.trim()) {
+            this.showError('Please provide a GitHub Models API key!');
+            return;
+        }
         
         if (!age || !interest.trim()) {
             this.showError('Please fill in both age and interests!');
             return;
         }
 
-        await this.generateWishlist(age, interest);
+        await this.generateWishlist(apiKey, age, interest);
     }
 
-    async generateWishlist(age, interest) {
+    async generateWishlist(apiKey, age, interest) {
         this.showLoading();
         
         try {
-            const wishlist = await this.callLLM(age, interest);
+            const wishlist = await this.callGitHubModels(apiKey, age, interest);
             this.displayWishlist(wishlist);
         } catch (error) {
             console.error('Error generating wishlist:', error);
-            this.showError('Sorry, I had trouble generating your wishlist. Please try again!');
-        }
-    }
-
-    async callLLM(age, interest) {
-        // For demo purposes, I'll create a mock LLM response
-        // In a real implementation, you would call GitHub Models API or another LLM service
-        
-        // Simulate API call delay
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        // Mock response based on age and interest
-        const wishlistItems = this.generateMockWishlist(age, interest);
-        
-        return wishlistItems;
-    }
-
-    generateMockWishlist(age, interest) {
-        // This is a simplified mock - in reality, you'd use an actual LLM API
-        const baseItems = [
-            {
-                name: "Premium Notebook Set",
-                description: "Beautiful leather-bound notebooks perfect for writing down thoughts, sketches, or planning adventures."
-            },
-            {
-                name: "Cozy Reading Blanket",
-                description: "Ultra-soft blanket perfect for curling up with a good book or movie on lazy afternoons."
-            },
-            {
-                name: "Artisan Tea Collection",
-                description: "Curated selection of premium teas from around the world to enjoy during quiet moments."
-            },
-            {
-                name: "Bluetooth Wireless Earbuds",
-                description: "High-quality earbuds for listening to music, podcasts, or audiobooks anywhere you go."
-            },
-            {
-                name: "Desktop Succulent Garden",
-                description: "Low-maintenance plants that add life and color to any workspace or room."
-            },
-            {
-                name: "Gourmet Chocolate Box",
-                description: "Assortment of artisanal chocolates for those special treat-yourself moments."
-            },
-            {
-                name: "Aromatherapy Candle Set",
-                description: "Soy candles with calming scents like lavender, vanilla, and eucalyptus for relaxation."
-            },
-            {
-                name: "Portable Phone Charger",
-                description: "Sleek power bank to keep your devices charged during busy days and travels."
-            },
-            {
-                name: "Recipe Inspiration Book",
-                description: "Beautiful cookbook with easy, delicious recipes to try in the kitchen."
-            },
-            {
-                name: "Streaming Service Gift Card",
-                description: "Credit for your favorite streaming platform to discover new shows and movies."
+            let errorMessage = 'Sorry, I had trouble generating your wishlist. Please try again!';
+            
+            if (error.message.includes('401') || error.message.includes('unauthorized')) {
+                errorMessage = 'Invalid API key. Please check your GitHub Models API key and try again.';
+            } else if (error.message.includes('429')) {
+                errorMessage = 'Rate limit exceeded. Please wait a moment and try again.';
+            } else if (error.message.includes('network') || error.message.includes('fetch')) {
+                errorMessage = 'Network error. Please check your internet connection and try again.';
             }
-        ];
+            
+            this.showError(errorMessage);
+        }
+    }
 
-        // Customize based on interests
-        const interestLower = interest.toLowerCase();
-        const customItems = [];
+    async callGitHubModels(apiKey, age, interest) {
+        const prompt = `You are a helpful assistant that creates personalized wishlists. Create a wishlist of exactly 10 items for someone who is ${age} years old and interested in: ${interest}.
 
-        if (interestLower.includes('read') || interestLower.includes('book')) {
-            customItems.push({
-                name: "Book Subscription Box",
-                description: "Monthly delivery of carefully selected books based on your reading preferences."
-            });
+Each item should be:
+- Age-appropriate and suitable for their interests
+- Realistic and obtainable
+- Have a clear name (2-6 words)
+- Have a helpful description (1-2 sentences)
+
+Please respond with a JSON array of exactly 10 objects, each with "name" and "description" fields. Make the items diverse and interesting, covering different price ranges and categories related to their interests.
+
+Example format:
+[
+  {
+    "name": "Premium Notebook Set",
+    "description": "High-quality leather-bound notebooks perfect for journaling and creative writing."
+  }
+]
+
+Only return the JSON array, no other text.`;
+
+        const requestBody = {
+            messages: [
+                {
+                    role: "system",
+                    content: "You are a helpful assistant that creates personalized wishlists based on age and interests. Always respond with valid JSON only."
+                },
+                {
+                    role: "user",
+                    content: prompt
+                }
+            ],
+            model: this.modelName,
+            temperature: 0.8,
+            max_tokens: 2000,
+            top_p: 1
+        };
+
+        const response = await fetch(this.apiEndpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify(requestBody)
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        if (interestLower.includes('music') || interestLower.includes('guitar') || interestLower.includes('piano')) {
-            customItems.push({
-                name: "Premium Music Streaming Subscription",
-                description: "High-quality music streaming with access to millions of songs and exclusive content."
-            });
-        }
-
-        if (interestLower.includes('cook') || interestLower.includes('baking') || interestLower.includes('food')) {
-            customItems.push({
-                name: "Professional Chef's Knife",
-                description: "High-quality kitchen knife that makes cooking more enjoyable and efficient."
-            });
-        }
-
-        if (interestLower.includes('travel') || interestLower.includes('adventure')) {
-            customItems.push({
-                name: "Travel Journal & Accessories",
-                description: "Beautiful travel journal with maps, stickers, and pockets for memories."
-            });
-        }
-
-        if (interestLower.includes('game') || interestLower.includes('gaming')) {
-            customItems.push({
-                name: "Gaming Headset",
-                description: "Comfortable headset with excellent sound quality for gaming sessions."
-            });
-        }
-
-        if (interestLower.includes('art') || interestLower.includes('draw') || interestLower.includes('paint')) {
-            customItems.push({
-                name: "Premium Art Supply Set",
-                description: "Professional-grade art supplies including pencils, paints, and sketchbooks."
-            });
-        }
-
-        if (interestLower.includes('fitness') || interestLower.includes('yoga') || interestLower.includes('exercise')) {
-            customItems.push({
-                name: "Yoga Mat & Accessories",
-                description: "High-quality yoga mat with blocks and straps for a complete practice."
-            });
-        }
-
-        if (interestLower.includes('tech') || interestLower.includes('computer') || interestLower.includes('coding')) {
-            customItems.push({
-                name: "Mechanical Keyboard",
-                description: "Premium mechanical keyboard for a satisfying typing experience."
-            });
-        }
-
-        // Age-based customization
-        if (age < 18) {
-            customItems.push({
-                name: "Study Planner & Stationery",
-                description: "Colorful planner and premium pens to stay organized with school and activities."
-            });
-        } else if (age >= 18 && age <= 30) {
-            customItems.push({
-                name: "Coffee Subscription",
-                description: "Monthly delivery of specialty coffee beans from around the world."
-            });
-        } else {
-            customItems.push({
-                name: "Luxury Bath Set",
-                description: "Premium bath bombs, salts, and lotions for ultimate relaxation."
-            });
-        }
-
-        // Combine and shuffle items
-        const allItems = [...baseItems, ...customItems];
-        const shuffled = allItems.sort(() => 0.5 - Math.random());
+        const data = await response.json();
         
-        return shuffled.slice(0, 10);
+        if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+            throw new Error('Invalid response format from API');
+        }
+
+        const content = data.choices[0].message.content.trim();
+        
+        try {
+            // Try to parse the JSON response
+            const wishlistItems = JSON.parse(content);
+            
+            if (!Array.isArray(wishlistItems) || wishlistItems.length === 0) {
+                throw new Error('Invalid wishlist format');
+            }
+            
+            // Ensure we have exactly 10 items and they have the correct format
+            const validItems = wishlistItems
+                .filter(item => item && item.name && item.description)
+                .slice(0, 10);
+                
+            if (validItems.length < 5) {
+                throw new Error('Not enough valid items generated');
+            }
+            
+            return validItems;
+            
+        } catch (parseError) {
+            console.error('Failed to parse LLM response:', content);
+            // Fallback: try to extract items from text response
+            return this.parseTextResponse(content, age, interest);
+        }
+    }
+
+    parseTextResponse(content, age, interest) {
+        // Fallback parser for when LLM doesn't return valid JSON
+        const lines = content.split('\\n').filter(line => line.trim());
+        const items = [];
+        
+        let currentItem = {};
+        
+        for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed) continue;
+            
+            // Look for numbered items or items starting with - or *
+            if (/^\\d+\\.|^[-*]/.test(trimmed)) {
+                if (currentItem.name) {
+                    items.push(currentItem);
+                }
+                currentItem = {
+                    name: trimmed.replace(/^\\d+\\.|^[-*]\\s*/, '').replace(/[:.].*$/, '').trim(),
+                    description: trimmed.replace(/^\\d+\\.|^[-*]\\s*[^:.]+([:.]\\s*)?/, '').trim() || 'A great item for your wishlist!'
+                };
+            } else if (currentItem.name && !currentItem.description) {
+                currentItem.description = trimmed;
+            }
+        }
+        
+        if (currentItem.name) {
+            items.push(currentItem);
+        }
+        
+        // If we still don't have enough items, generate some fallback items
+        if (items.length < 5) {
+            return this.generateFallbackWishlist(age, interest);
+        }
+        
+        return items.slice(0, 10);
+    }
+
+    generateFallbackWishlist(age, interest) {
+        // Fallback wishlist generator when API fails
+        const interestLower = interest.toLowerCase();
+        const items = [];
+        
+        // Base items that work for most people
+        const baseItems = [
+            { name: "Premium Notebook Set", description: "High-quality notebooks perfect for writing, sketching, or planning." },
+            { name: "Bluetooth Wireless Earbuds", description: "High-quality earbuds for music, podcasts, and calls on the go." },
+            { name: "Cozy Reading Blanket", description: "Ultra-soft blanket perfect for relaxing and unwinding at home." },
+            { name: "Artisan Tea or Coffee Collection", description: "Curated selection of premium beverages to enjoy during quiet moments." },
+            { name: "Desktop Plant Set", description: "Low-maintenance plants that add life and color to any space." }
+        ];
+        
+        items.push(...baseItems);
+        
+        // Interest-specific items
+        if (interestLower.includes('read') || interestLower.includes('book')) {
+            items.push({ name: "Book Subscription Box", description: "Monthly delivery of carefully selected books based on your preferences." });
+        }
+        
+        if (interestLower.includes('music') || interestLower.includes('guitar') || interestLower.includes('piano')) {
+            items.push({ name: "Music Streaming Premium Subscription", description: "Access to millions of songs and exclusive content." });
+        }
+        
+        if (interestLower.includes('cook') || interestLower.includes('baking') || interestLower.includes('food')) {
+            items.push({ name: "Professional Chef's Knife", description: "High-quality kitchen knife that makes cooking more enjoyable." });
+        }
+        
+        if (interestLower.includes('art') || interestLower.includes('draw') || interestLower.includes('paint')) {
+            items.push({ name: "Professional Art Supply Set", description: "Premium art supplies including pencils, paints, and paper." });
+        }
+        
+        if (interestLower.includes('fitness') || interestLower.includes('yoga') || interestLower.includes('exercise')) {
+            items.push({ name: "Yoga Mat & Accessories", description: "Complete yoga set with mat, blocks, and straps." });
+        }
+        
+        // Age-appropriate additions
+        if (age < 18) {
+            items.push({ name: "Study Planner & Stationery", description: "Organized planner and premium pens for school success." });
+        } else if (age >= 18 && age <= 30) {
+            items.push({ name: "Coffee Subscription", description: "Monthly delivery of specialty coffee beans from around the world." });
+        } else {
+            items.push({ name: "Luxury Bath Set", description: "Premium bath products for ultimate relaxation and self-care." });
+        }
+        
+        // Generic items to fill up to 10
+        const fillerItems = [
+            { name: "Portable Phone Charger", description: "Reliable power bank to keep your devices charged anywhere." },
+            { name: "Aromatherapy Candle Set", description: "Soy candles with calming scents for relaxation." },
+            { name: "Gourmet Chocolate Box", description: "Assortment of artisanal chocolates for special moments." }
+        ];
+        
+        items.push(...fillerItems);
+        
+        return items.slice(0, 10);
     }
 
     displayWishlist(items) {
@@ -196,13 +253,19 @@ class WishlistGenerator {
             const itemElement = document.createElement('div');
             itemElement.className = 'wishlist-item';
             itemElement.innerHTML = `
-                <div class="item-name">${item.name}</div>
-                <div class="item-description">${item.description}</div>
+                <div class="item-name">${this.escapeHtml(item.name)}</div>
+                <div class="item-description">${this.escapeHtml(item.description)}</div>
             `;
             this.wishlistItems.appendChild(itemElement);
         });
         
         this.wishlistContainer.classList.remove('hidden');
+    }
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
 
     showLoading() {
@@ -227,11 +290,12 @@ class WishlistGenerator {
     }
 
     async regenerateWishlist() {
+        const apiKey = document.getElementById('apiKey').value;
         const age = document.getElementById('age').value;
         const interest = document.getElementById('interest').value;
         
-        if (age && interest) {
-            await this.generateWishlist(age, interest);
+        if (apiKey && age && interest) {
+            await this.generateWishlist(apiKey, age, interest);
         }
     }
 }
